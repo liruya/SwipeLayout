@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SwipeLayout">
+        <attr name="actionLayout" format="reference"/>
+        <attr name="contentLayout" format="reference"/>
+        <attr name="swipeMode" format="enum">
+            <enum name="disabled" value="0"/>
+            <enum name="cover" value="1"/>
+            <enum name="scroll" value="2"/>
+        </attr>
+        <attr name="swipeDirection" format="enum">
+            <enum name="left" value="0"/>
+            <enum name="right" value="1"/>
+        </attr>
+    </declare-styleable>
+</resources>
