@@ -7,8 +7,10 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 
@@ -36,6 +38,8 @@ public class SwipeLayout extends RelativeLayout
     private boolean mOpened;
     private boolean mClickAction;
 
+    private OnSwipeItemClickListener mOnSwipeItemClickListener;
+
     public SwipeLayout( @NonNull Context context )
     {
         this( context, null );
@@ -60,16 +64,6 @@ public class SwipeLayout extends RelativeLayout
         initView( context );
     }
 
-//    @Override
-//    protected void onMeasure( int widthMeasureSpec, int heightMeasureSpec )
-//    {
-//        super.onMeasure( widthMeasureSpec, heightMeasureSpec );
-//        for ( int i = 0; i < getChildCount(); i++ )
-//        {
-//            Log.e( TAG, "onMeasure: " + i + "   " + getChildAt( i ).getMeasuredWidth() + "  " + getChildAt( i ).getMeasuredHeight() );
-//        }
-//    }
-
     private void initView( @NonNull Context context )
     {
         LayoutInflater inflater = LayoutInflater.from( context );
@@ -84,8 +78,9 @@ public class SwipeLayout extends RelativeLayout
         //触摸事件需要使能点击
         mContentView.setClickable( true );
         LayoutParams lpc = new LayoutParams( LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT );
-        lpc.addRule( ALIGN_PARENT_LEFT );
-        lpc.addRule( ALIGN_PARENT_RIGHT );
+        lpc.addRule( CENTER_IN_PARENT );
+        //        lpc.addRule( ALIGN_PARENT_LEFT );
+//        lpc.addRule( ALIGN_PARENT_RIGHT );
         lpc.topMargin = 0;
         lpc.bottomMargin = 0;
         mContentView.setLayoutParams( lpc );
@@ -104,7 +99,8 @@ public class SwipeLayout extends RelativeLayout
         {
             //触摸事件需要使能点击
             mActionView.setClickable( true );
-            LayoutParams lpa = new LayoutParams( LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT );
+            LayoutParams lpa = new LayoutParams( ViewGroup.LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT );
+//            LayoutParams lpa = new LayoutParams( LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT );
 
             //如果用户未设置id,则设置为默认id
             if ( mContentView.getId() == View.NO_ID )
@@ -132,12 +128,54 @@ public class SwipeLayout extends RelativeLayout
                 lpa.addRule( mSwipeDirection == SWIPE_DIRECTION_RIGHT ? LEFT_OF : RIGHT_OF, mContentView.getId() );
                 lpa.addRule( ALIGN_TOP, mContentView.getId() );
                 lpa.addRule( ALIGN_BOTTOM, mContentView.getId() );
-                lpa.setMargins( 0, 0, 0, 0 );
+                //marginLeft/marginRight不能为0 否则无法显示
+                lpa.setMargins( 1, 0, 1, 0 );
                 mActionView.setLayoutParams( lpa );
                 //先添加contentView 后添加actionView
                 addView( mContentView );
                 addView( mActionView );
             }
+        }
+    }
+
+    public void setOnSwipeItemClickListener( OnSwipeItemClickListener listener )
+    {
+        mOnSwipeItemClickListener = listener;
+        if ( mActionView != null )
+        {
+            if ( mActionView instanceof ViewGroup )
+            {
+                for ( int i = 0; i < ( (ViewGroup) mActionView ).getChildCount(); i++ )
+                {
+                    ( (ViewGroup) mActionView ).getChildAt( i ).setOnClickListener( new OnClickListener() {
+                        @Override
+                        public void onClick( View v )
+                        {
+                            mOnSwipeItemClickListener.onActionClick( v.getId() );
+                        }
+                    } );
+                }
+            }
+            else
+            {
+                mActionView.setOnClickListener( new OnClickListener() {
+                    @Override
+                    public void onClick( View v )
+                    {
+                        mOnSwipeItemClickListener.onActionClick( v.getId() );
+                    }
+                } );
+            }
+        }
+        if ( mContentView != null )
+        {
+            mContentView.setOnClickListener( new OnClickListener() {
+                @Override
+                public void onClick( View v )
+                {
+                    mOnSwipeItemClickListener.onContentClick();
+                }
+            } );
         }
     }
 
@@ -232,10 +270,10 @@ public class SwipeLayout extends RelativeLayout
                     return false;
                 }
                 //触摸坐标越界 向下分发,不处理onTouchEvent
-                if ( event.getY() < 0 || event.getY() > getHeight() || event.getX() < 0 || event.getX() > getWidth() )
-                {
-                    return false;
-                }
+//                if ( event.getY() < 0 || event.getY() > getHeight() || event.getX() < 0 || event.getX() > getWidth() )
+//                {
+//                    return false;
+//                }
                 //如果contentView未打开,且不在滑动状态,手势左滑速度必须大于100进入滑动状态
                 if ( !mMoving && !mOpened )
                 {
@@ -362,6 +400,7 @@ public class SwipeLayout extends RelativeLayout
 
     private boolean interceptTouchEventOfScroll( MotionEvent event )
     {
+        int max = getActionViewWidth();
         switch ( event.getAction() )
         {
             case MotionEvent.ACTION_DOWN:
@@ -372,7 +411,7 @@ public class SwipeLayout extends RelativeLayout
                 {
                     if ( mSwipeDirection == SWIPE_DIRECTION_RIGHT )
                     {
-                        if ( mTouchX > getWidth() - getActionViewWidth() )
+                        if ( mTouchX > max )
                         {
                             mMoving = true;
                         }
@@ -384,7 +423,7 @@ public class SwipeLayout extends RelativeLayout
                     }
                     else //if ( mSwipeDirection == SWIPE_DIRECTION_LEFT )
                     {
-                        if ( mTouchX < getWidth() - getActionViewWidth() )
+                        if ( mTouchX < getWidth() - max )
                         {
                             mMoving = true;
                         }
@@ -401,10 +440,46 @@ public class SwipeLayout extends RelativeLayout
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
-
+                if ( mClickAction )         //向下分发,不处理onTouchEvent
+                {
+                    return false;
+                }
+                //触摸坐标越界 向下分发,不处理onTouchEvent
+//                if ( event.getY() < 0 || event.getY() > getHeight() || event.getX() < 0 || event.getX() > getWidth() )
+//                {
+//                    return false;
+//                }
+                //如果contentView未打开,且不在滑动状态,手势左滑速度必须大于100进入滑动状态
+                if ( !mMoving && !mOpened )
+                {
+                    mVelocityTracker.addMovement( event );
+                    mVelocityTracker.computeCurrentVelocity( 1000 );
+                    if ( mSwipeDirection == SWIPE_DIRECTION_RIGHT )
+                    {
+                        if ( mVelocityTracker.getXVelocity() > 100 )
+                        {
+                            mMoving = true;
+                        }
+                    }
+                    else //if ( mSwipeDirection == SWIPE_DIRECTION_LEFT )
+                    {
+                        if ( mVelocityTracker.getXVelocity() < -100 )
+                        {
+                            mMoving = true;
+                        }
+                    }
+                }
+                if ( !mMoving )
+                {
+                    return false;
+                }
                 break;
             case MotionEvent.ACTION_UP:
-
+                mVelocityTracker.clear();
+                if ( mClickAction || !mMoving )
+                {
+                    return false;
+                }
                 break;
         }
         return true;
@@ -412,15 +487,97 @@ public class SwipeLayout extends RelativeLayout
 
     private boolean touchEventOfScroll( MotionEvent event )
     {
+        int max = getActionViewWidth();
         switch ( event.getAction() )
         {
             case MotionEvent.ACTION_MOVE:
-
+                int dx = (int) ( event.getX() - mTouchX );
+                if ( !mOpened )
+                {
+                    if ( mSwipeDirection == SWIPE_DIRECTION_RIGHT )
+                    {
+                        if ( dx < 0 )
+                        {
+                            dx = 0;
+                        }
+                        else if ( dx > max )
+                        {
+                            dx = max;
+                        }
+                    }
+                    else //if ( mSwipeDirection == SWIPE_DIRECTION_LEFT )
+                    {
+                        if ( dx > 0 )
+                        {
+                            dx = 0;
+                        }
+                        else if ( dx < 0 - max )
+                        {
+                            dx = 0 - max;
+                        }
+                    }
+                    setScrollX( 0 - dx );
+                }
+                else
+                {
+                    if ( mSwipeDirection == SWIPE_DIRECTION_RIGHT )
+                    {
+                        if ( dx > 0 )
+                        {
+                            dx = max;
+                        }
+                        else if ( dx < 0 - max )
+                        {
+                            dx = 0;
+                        }
+                        else
+                        {
+                            dx = max + dx;
+                        }
+                    }
+                    else //if ( mSwipeDirection == SWIPE_DIRECTION_LEFT )
+                    {
+                        if ( dx < 0 )
+                        {
+                            dx = 0 - max;
+                        }
+                        else if ( dx > max )
+                        {
+                            dx = 0;
+                        }
+                        else
+                        {
+                            dx -= max;
+                        }
+                    }
+                    setScrollX( 0 - dx );
+                }
                 break;
             case MotionEvent.ACTION_UP:
-
+                mVelocityTracker.clear();
+                if ( mMoving )
+                {
+                    if ( mSwipeDirection == SWIPE_DIRECTION_RIGHT )
+                    {
+                        mOpened = getScrollX() < (0-max)/2;
+                        setScrollX( mOpened ? 0 -max : 0 );
+                    }
+                    else //if ( mSwipeDirection == SWIPE_DIRECTION_LEFT )
+                    {
+                        mOpened = getScrollX() > max/2;
+                        setScrollX( mOpened ? max : 0 );
+                    }
+                    mMoving = false;
+                }
                 break;
         }
         return true;
+    }
+
+    public interface OnSwipeItemClickListener
+    {
+        void onContentClick();
+
+        void onActionClick( @IdRes int actionid );
     }
 }

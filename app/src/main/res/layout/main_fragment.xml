@@ -13,23 +13,51 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
     <com.liruya.swipelayout.SwipeLayout
+        android:id="@+id/swipelayout_cover_left"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:swipeMode="cover"
         app:swipeDirection="left"/>
     <com.liruya.swipelayout.SwipeLayout
+        android:id="@+id/swipelayout_cover_right"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:swipeMode="cover"
         app:swipeDirection="right"/>
     <com.liruya.swipelayout.SwipeLayout
+        android:id="@+id/swipelayout_scroll_left"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:swipeMode="scroll"
         app:swipeDirection="left"/>
     <com.liruya.swipelayout.SwipeLayout
+        android:id="@+id/swipelayout_scroll_right"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:swipeMode="scroll"
         app:swipeDirection="right"/>
+    <!--<RelativeLayout-->
+        <!--android:id="@+id/relative"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="64dp"-->
+        <!--android:gravity="center_vertical">-->
+        <!--<TextView-->
+            <!--android:id="@+id/tv_text"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:gravity="center_vertical"-->
+            <!--android:background="#FF00FF"-->
+            <!--android:text="xxxxxxxxxxxxxxxxxxxxxxxx"-->
+            <!--android:layout_alignParentLeft="true"-->
+            <!--android:layout_alignParentRight="true"-->
+            <!--android:layout_centerVertical="true"/>-->
+        <!--<ImageView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_toRightOf="@id/tv_text"-->
+            <!--android:layout_marginLeft="1dp"-->
+            <!--android:layout_alignParentTop="true"-->
+            <!--android:layout_alignParentBottom="true"-->
+            <!--android:src="@mipmap/ic_launcher"/>-->
+    <!--</RelativeLayout>-->
 </LinearLayout>
